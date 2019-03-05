@@ -1,29 +1,30 @@
 import random
 
-
 def runCrossover(population):
     childPopulation = []
+    numberOfBits = len(population[0][0])
 
-    for i in range(1, len(population)):
-        parentOne = ''.join(population[i - 1])
-        parentTwo = ''.join(population[i])
+    for i in range(0, len(population), 2):
+        try:
+            parentOne = ''.join(population[i])
+            parentTwo = ''.join(population[i + 1])
+        except IndexError:
+            parentOne = ''.join(population[i])
+            parentTwo = ''.join(population[0])
 
-        # John Hollands classic crossover
+        crossoverBit = random.randint(1, len(parentOne)-1)
 
-        crossoverBit = random.randint(0, len(parentOne))
+        childOne = parentOne[:crossoverBit] + parentTwo[crossoverBit:]
+        childTwo = parentTwo[:crossoverBit] + parentOne[crossoverBit:]
+        children = [childOne, childTwo]
 
-        childOneString = parentOne[:crossoverBit] + parentTwo[crossoverBit:]
-        childTwoString = parentTwo[:crossoverBit] + parentOne[crossoverBit:]
-        childStrings = [childOneString, childTwoString]
-
-        for string in childStrings:
-            allele = ''
-            child = []
-            for j in range(1, len(string) + 1):
-                allele += string[j - 1]
-                if j % 3 == 0:
-                    child.append(allele)
-                    allele = ''
+        for string in children:
+            child = [string[i:i + numberOfBits] for i in range(0, len(string), numberOfBits)]
             childPopulation.append(child)
 
     return childPopulation
+
+
+
+
+
