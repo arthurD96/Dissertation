@@ -6,7 +6,6 @@ def runRepair(population):
 
     for j in range(1, numberOfCities + 1):
         city = bin(j)[2:].zfill(binaryLength)
-        print(city)
         exampleSolution.append(city)
     setExample = frozenset(exampleSolution)
 
