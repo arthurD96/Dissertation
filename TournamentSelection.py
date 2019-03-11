@@ -8,12 +8,12 @@ def tournamentSelection(population, selectionPercentage, winningPopulationPercen
     winningPopulationSize = winningPopulationFloat * float(len(population))
 
     percentageFloat = float(selectionPercentage) / 100
-    numberSelected = percentageFloat * float(len(population))
+    tournamentSize = percentageFloat * float(len(population))
 
     for i in range(0, int(winningPopulationSize)):
         tournamentPool = []
         bestCandidate = [[], 0]
-        selectedCompetitors = random.sample(range(len(population)), int(numberSelected))
+        selectedCompetitors = random.sample(range(len(population)), int(tournamentSize))
         for j in range(0, len(selectedCompetitors)):
             tournamentPool.append(population[selectedCompetitors[j]])
         for candidate in tournamentPool:
