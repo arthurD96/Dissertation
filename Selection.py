@@ -9,7 +9,6 @@ def tournamentSelection(population, selectionPercentage, winningPopulationPercen
 
     percentageFloat = float(selectionPercentage) / 100
     tournamentSize = percentageFloat * float(len(population))
-
     for i in range(0, int(winningPopulationSize)):
         tournamentPool = []
         bestCandidate = [[], 0]

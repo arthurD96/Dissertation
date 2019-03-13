@@ -48,7 +48,6 @@ def runCrossover(population):
         for string in children:
             child = [string[i:i + numberOfBits] for i in range(0, len(string), numberOfBits)]
             childPopulation.append(child)
-
     return childPopulation
 
 
