@@ -1,4 +1,17 @@
 import random
+import sys
+
+
+def generatePopulation(representation, tourSize, populationSize):
+    if representation == 'Bi':
+        population = generatePopulationBinary(tourSize, populationSize)
+        return population
+    elif representation == 'Pa':
+        population = generatePopulationPath(tourSize, populationSize)
+        return population
+    else:
+        print(representation + ' is not a valid representation')
+        sys.exit()
 
 
 def generatePopulationBinary(tourSize, populationSize):

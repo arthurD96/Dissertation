@@ -1,4 +1,17 @@
 import math
+import sys
+
+
+def calculateFitness(representation, population, cityCords):
+    if representation == 'Bi':
+        population = calculateFitnessBinary(population, cityCords)
+        return population
+    elif representation == 'Pa':
+        population = calculateFitnessPath(population, cityCords)
+        return population
+    else:
+        print(representation + ' is not a valid representation')
+        sys.exit()
 
 
 def calculateFitnessBinary(population, cityCords):

@@ -1,7 +1,8 @@
 import random
 
 
-def generateMap(numberOfCities, maxDistance):
+def generateMap(numberOfCities):
+    maxDistance = 1000
     xCord = [random.randrange(1, maxDistance + 1, 1) for _ in range(numberOfCities)]
     yCord = [random.randrange(1, maxDistance + 1, 1) for _ in range(numberOfCities)]
     xyCords = list(zip(xCord, yCord))

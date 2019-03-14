@@ -3,65 +3,133 @@ from operator import itemgetter
 from tqdm import tqdm
 
 import matplotlib.pyplot as plt
+import math
+import sys
 
 import MapGenerator
 import GenerateDataSet
 import CalculateFitness
-import ConvertRoute
 import Selection
 import BinaryOperators
 import Replacement
 
+numberOfCities = 30
+populationSize = 100000
+childPopulationSizePercentage = 10
+generationalGapPercentage = 1
+mutationProbability = 1 / (numberOfCities * 5)
+
+representation = 'Bi'
+terminationType = 'Co'
+selectionType = 'Ro'
+
+cityCords = []
+tournamentSize = 10
+iterations = 1000
+convergenceNumber = 50
+generationalSizePercentage = 99.9
+
 
 def main():
-    numberOfCities = 60
-    populationSize = 300000
-    maxDistance = 1000
-    tournamentSizePercentage = 5
-    childPopulationSizePercentage = 20
-    mutationProbability = 1 / (numberOfCities * 5)
-    generationalGapPercentage = 5
-    generationalSizePercentage = 99.8
-    population = GenerateDataSet.generatePopulationBinary(numberOfCities, populationSize)
-    cityCords = MapGenerator.generateMap(numberOfCities, maxDistance)
-    plotMap(cityCords)
-    populationWithFitness = CalculateFitness.calculateFitnessBinary(population, cityCords)
-    originalSolution = findBestSolution(populationWithFitness)
-    duration = 0
-    totalDuration = 0
-    while len(populationWithFitness) > 1000:
-        start = time.time()
-        try:
-            print(str(len(populationWithFitness)) + ': loop took ' + str(duration) + ' seconds for a total of ' + str(
-                int(totalDuration / 60)) + ' minutes')
-            childPopulation = Selection.rouletteSelection(populationWithFitness,
-                                                          childPopulationSizePercentage)
-            crossoverPopulation = BinaryOperators.runCrossover(childPopulation)
-            mutatedPopulation = BinaryOperators.runMutation(crossoverPopulation, mutationProbability)
-            repairedSolutions = BinaryOperators.runRepair(mutatedPopulation)
-            childPopulationWithFitness = CalculateFitness.calculateFitnessBinary(repairedSolutions, cityCords)
+    global cityCords
+    cityCords = MapGenerator.generateMap(numberOfCities)
+    plotMap()
 
-            populationWithFitness = Replacement.generationalReplacement(populationWithFitness,
-                                                                        childPopulationWithFitness,
-                                                                        generationalGapPercentage,
-                                                                        generationalSizePercentage)
-            stop = time.time()
-            duration = stop - start
-            totalDuration += duration
-        except IndexError:
-            break
+    originalPopulation = GenerateDataSet.generatePopulation(representation, numberOfCities, populationSize)
+    originalPopulationWithFitness = CalculateFitness.calculateFitness(representation, originalPopulation, cityCords)
+    originalSolution = findBestSolution(originalPopulationWithFitness)
 
-    originalXySolution = ConvertRoute.convertRouteToXY(originalSolution, cityCords)
-    plotRoute(originalXySolution)
-    finalSolution = findBestSolution(populationWithFitness)
-    finalXySolution = ConvertRoute.convertRouteToXY(finalSolution, cityCords)
-    plotRoute(finalXySolution)
+    if terminationType == 'It':
+        bestSolution = iterationTermination(originalPopulationWithFitness)
+    elif terminationType == 'Re':
+        bestSolution = reductionTermination(originalPopulationWithFitness)
+    elif terminationType == 'Co':
+        bestSolution = convergenceTermination(originalPopulationWithFitness)
+    else:
+        print(terminationType + ' is not a valid termination type')
 
-    algorithmEfficiency = (originalSolution[1] / finalSolution[1]) * 100
+    plotRoute(originalSolution)
+    plotRoute(bestSolution)
+
+    algorithmEfficiency = (originalSolution[1] / bestSolution[1]) * 100
     print("New Solution is: " + str(int(algorithmEfficiency) - 100) + "% faster than the original fastest route")
 
 
-def plotRoute(xySolution):
+def iterationTermination(originalPopulationWithFitness):
+    populationWithFitness = originalPopulationWithFitness
+    for i in tqdm(range(iterations)):
+        populationWithFitness = createNewGeneration(populationWithFitness)
+    time.sleep(1)
+    bestSolution = findBestSolution(populationWithFitness)
+    return bestSolution
+
+
+def reductionTermination(originalPopulationWithFitness):
+    populationWithFitness = originalPopulationWithFitness
+    count = 1
+    totalDuration = 0
+    print('Minute 0: Population size = ' + str(len(populationWithFitness)))
+    while populationWithFitness:
+        start = time.time()
+        try:
+            populationWithFitness = createNewGeneration(populationWithFitness)
+            stop = time.time()
+            duration = stop - start
+            totalDuration += (duration / 60)
+            if int(totalDuration) == count:
+                print('Minute ' + str(count) + ': Population size = ' + str(len(populationWithFitness)))
+                count += 1
+            bestSolution = findBestSolution(populationWithFitness)
+        except IndexError:
+            break
+    return bestSolution
+
+
+def convergenceTermination(originalPopulationWithFitness):
+    populationWithFitness = originalPopulationWithFitness
+    count = 0
+    currentBest = math.inf
+    while count < convergenceNumber:
+        populationWithFitness = createNewGeneration(populationWithFitness)
+        bestSolution = findBestSolution(populationWithFitness)
+        if bestSolution[1] < currentBest:
+            currentBest = bestSolution[1]
+            count = 0
+            print('Current best fitness = ' + str(bestSolution[1]))
+        else:
+            count += 1
+    return bestSolution
+
+
+def createNewGeneration(populationWithFitness):
+    if selectionType == 'Ro':
+        childPopulation = Selection.rouletteSelection(populationWithFitness,
+                                                      childPopulationSizePercentage)
+    elif selectionType == 'To':
+        childPopulation = Selection.tournamentSelection(populationWithFitness, tournamentSize,
+                                                        childPopulationSizePercentage)
+    else:
+        print(selectionType + ' is not a valid selection method')
+        sys.exit()
+
+    childPopulation = BinaryOperators.runCrossover(childPopulation)
+    childPopulation = BinaryOperators.runMutation(childPopulation, mutationProbability)
+    childPopulation = BinaryOperators.runRepair(childPopulation)
+    childPopulationWithFitness = CalculateFitness.calculateFitnessBinary(childPopulation, cityCords)
+    newGeneration = Replacement.generationalReplacement(populationWithFitness,
+                                                        childPopulationWithFitness,
+                                                        generationalGapPercentage,
+                                                        generationalSizePercentage)
+    return newGeneration
+
+
+def plotRoute(solution):
+    solution[0].append(solution[0][0])
+    xySolution = []
+    for i in range(0, len(solution[0])):
+        cityInt = int(solution[0][i], 2)
+        xySolution.append(cityCords[cityInt - 1])
+
     unzippedXy = list(zip(*xySolution))
     xCord = unzippedXy[0]
     yCord = unzippedXy[1]
@@ -69,8 +137,8 @@ def plotRoute(xySolution):
     plt.show()
 
 
-def plotMap(xyCords):
-    unzippedXy = list(zip(*xyCords))
+def plotMap():
+    unzippedXy = list(zip(*cityCords))
     xCord = unzippedXy[0]
     yCord = unzippedXy[1]
     plt.scatter(xCord, yCord)
