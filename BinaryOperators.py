@@ -1,7 +1,7 @@
 import random
 
 
-def runMutation(population, mutationProbability):
+def runMutation(mutation, population, mutationProbability):
     mutatedPopulation = []
 
     for i in range(0, len(population)):
@@ -27,7 +27,7 @@ def runMutation(population, mutationProbability):
     return mutatedPopulation
 
 
-def runCrossover(population):
+def runCrossover(crossover, population):
     childPopulation = []
     numberOfBits = len(population[0][0])
 

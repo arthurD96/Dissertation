@@ -11,23 +11,52 @@ import GenerateDataSet
 import CalculateFitness
 import Selection
 import BinaryOperators
+import PathOperators
 import Replacement
 
-numberOfCities = 30
-populationSize = 100000
-childPopulationSizePercentage = 10
-generationalGapPercentage = 1
-mutationProbability = 1 / (numberOfCities * 5)
+numberOfCities = 50
+populationSize = 10000
+childPopulationSizePercentage = 50
+generationalGapPercentage = 25
+mutationProbability = 0.01
 
-representation = 'Bi'
-terminationType = 'Co'
+'Representation Key: Bi = Binary, Pa = Path'
+
+representation = 'Pa'
+representations = {'Bi': BinaryOperators, 'Pa': PathOperators}
+
+'Selection Key: To = Tournament, Ro = Roulette'
+
 selectionType = 'Ro'
-
-cityCords = []
 tournamentSize = 10
-iterations = 1000
+
+'''
+Crossover Key: 
+Binary - (ClBi = Classical Binary)
+Path - (MPPa = Maximal Preservative Path, PMPa = Partially Mapped Path, PBPa = Position Based Path, OrPa = Order Path,
+OBPa = Order Based Path, APPa = Alternating Position Path, CyPa = Cycle Based Path)
+'''
+
+crossover = 'MPPa'
+
+'''
+Mutation Key: 
+ClBi = Classical Binary 
+DiPa = Displacement Path, ExPa = Exchange Path, IsPa = Insertion Path, IvPa = Inversion Path, ScPa = Scramble Path, 
+SIPa = Simple Inversion Path
+'''
+
+mutation = 'DiPa'
+
+'Termination Key: It = Iteration, Re = Reduction, Co = Convergence'
+
+terminationType = 'Co'
+iterations = 100
 convergenceNumber = 50
-generationalSizePercentage = 99.9
+generationalSizePercentage = 99.99
+
+fitnessFunction = {'Bi': CalculateFitness.calculateFitnessBinary, 'Pa': CalculateFitness.calculateFitnessPath}
+cityCords = []
 
 
 def main():
@@ -36,7 +65,7 @@ def main():
     plotMap()
 
     originalPopulation = GenerateDataSet.generatePopulation(representation, numberOfCities, populationSize)
-    originalPopulationWithFitness = CalculateFitness.calculateFitness(representation, originalPopulation, cityCords)
+    originalPopulationWithFitness = fitnessFunction[representation](originalPopulation, cityCords)
     originalSolution = findBestSolution(originalPopulationWithFitness)
 
     if terminationType == 'It':
@@ -112,10 +141,13 @@ def createNewGeneration(populationWithFitness):
         print(selectionType + ' is not a valid selection method')
         sys.exit()
 
-    childPopulation = BinaryOperators.runCrossover(childPopulation)
-    childPopulation = BinaryOperators.runMutation(childPopulation, mutationProbability)
-    childPopulation = BinaryOperators.runRepair(childPopulation)
-    childPopulationWithFitness = CalculateFitness.calculateFitnessBinary(childPopulation, cityCords)
+    childPopulation = representations[representation].runCrossover(crossover, childPopulation)
+    childPopulation = representations[representation].runMutation(mutation, childPopulation, mutationProbability)
+
+    if representation == 'Bi':
+        childPopulation = representations[representation].runRepair(childPopulation)
+
+    childPopulationWithFitness = fitnessFunction[representation](childPopulation, cityCords)
     newGeneration = Replacement.generationalReplacement(populationWithFitness,
                                                         childPopulationWithFitness,
                                                         generationalGapPercentage,
@@ -127,7 +159,7 @@ def plotRoute(solution):
     solution[0].append(solution[0][0])
     xySolution = []
     for i in range(0, len(solution[0])):
-        cityInt = int(solution[0][i], 2)
+        cityInt = int(solution[0][i])
         xySolution.append(cityCords[cityInt - 1])
 
     unzippedXy = list(zip(*xySolution))
@@ -152,3 +184,4 @@ def findBestSolution(populationWithFitness):
 
 
 main()
+
