@@ -64,7 +64,6 @@ def partiallyMappedMapping(child, parent, map, revMap):
                                 city = a[1]
                                 break
                 child[k] = city
-        print(child)
     return child
 
 
