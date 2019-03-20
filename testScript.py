@@ -2,7 +2,6 @@ import time
 from operator import itemgetter
 from tqdm import tqdm
 
-import matplotlib.pyplot as plt
 import math
 import sys
 
@@ -13,6 +12,7 @@ import Selection
 import BinaryOperators
 import PathOperators
 import Replacement
+import Plotting
 
 numberOfCities = 50
 populationSize = 10000
@@ -62,7 +62,6 @@ cityCords = []
 def main():
     global cityCords
     cityCords = MapGenerator.generateMap(numberOfCities)
-    plotMap()
 
     originalPopulation = GenerateDataSet.generatePopulation(representation, numberOfCities, populationSize)
     originalPopulationWithFitness = fitnessFunction[representation](originalPopulation, cityCords)
@@ -77,11 +76,12 @@ def main():
     else:
         print(terminationType + ' is not a valid termination type')
 
-    plotRoute(originalSolution)
-    plotRoute(bestSolution)
-
     algorithmEfficiency = (originalSolution[1] / bestSolution[1]) * 100
     print("New Solution is: " + str(int(algorithmEfficiency) - 100) + "% faster than the original fastest route")
+
+    Plotting.plotMap(cityCords)
+    Plotting.plotRoute(representation, originalSolution, cityCords)
+    Plotting.plotRoute(representation, bestSolution, cityCords)
 
 
 def iterationTermination(originalPopulationWithFitness):
@@ -155,28 +155,6 @@ def createNewGeneration(populationWithFitness):
     return newGeneration
 
 
-def plotRoute(solution):
-    solution[0].append(solution[0][0])
-    xySolution = []
-    for i in range(0, len(solution[0])):
-        cityInt = int(solution[0][i])
-        xySolution.append(cityCords[cityInt - 1])
-
-    unzippedXy = list(zip(*xySolution))
-    xCord = unzippedXy[0]
-    yCord = unzippedXy[1]
-    plt.plot(xCord, yCord)
-    plt.show()
-
-
-def plotMap():
-    unzippedXy = list(zip(*cityCords))
-    xCord = unzippedXy[0]
-    yCord = unzippedXy[1]
-    plt.scatter(xCord, yCord)
-    plt.show()
-
-
 def findBestSolution(populationWithFitness):
     sortedPopulation = sorted(populationWithFitness, key=itemgetter(1))
     bestSolution = sortedPopulation[0]
@@ -184,4 +162,3 @@ def findBestSolution(populationWithFitness):
 
 
 main()
-
