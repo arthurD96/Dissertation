@@ -4,6 +4,7 @@ from tqdm import tqdm
 
 import math
 import sys
+import csv
 
 import MapGenerator
 import GenerateDataSet
@@ -14,10 +15,10 @@ import PathOperators
 import Replacement
 import Plotting
 
-numberOfCities = 50
-populationSize = 10000
-childPopulationSizePercentage = 50
-generationalGapPercentage = 25
+numberOfCities = 70
+populationSize = 25000
+childPopulationSizePercentage = 30
+generationalGapPercentage = 20
 mutationProbability = 0.01
 
 'Representation Key: Bi = Binary, Pa = Path'
@@ -29,6 +30,7 @@ representations = {'Bi': BinaryOperators, 'Pa': PathOperators}
 
 selectionType = 'Ro'
 tournamentSize = 10
+selectionParameters = {'Ro': None, 'To': tournamentSize}
 
 '''
 Crossover Key: 
@@ -37,7 +39,7 @@ Path - (MPPa = Maximal Preservative Path, PMPa = Partially Mapped Path, PBPa = P
 OBPa = Order Based Path, APPa = Alternating Position Path, CyPa = Cycle Based Path)
 '''
 
-crossover = 'MPPa'
+crossoverType = 'MPPa'
 
 '''
 Mutation Key: 
@@ -46,14 +48,15 @@ DiPa = Displacement Path, ExPa = Exchange Path, IsPa = Insertion Path, IvPa = In
 SIPa = Simple Inversion Path
 '''
 
-mutation = 'DiPa'
+mutationType = 'DiPa'
 
 'Termination Key: It = Iteration, Re = Reduction, Co = Convergence'
 
 terminationType = 'Co'
 iterations = 100
 convergenceNumber = 50
-generationalSizePercentage = 99.99
+reductionPercentage = 99.99
+terminationParameters = {'It': iterations, 'Re': reductionPercentage, 'Co': convergenceNumber}
 
 fitnessFunction = {'Bi': CalculateFitness.calculateFitnessBinary, 'Pa': CalculateFitness.calculateFitnessPath}
 cityCords = []
@@ -76,15 +79,18 @@ def main():
     else:
         print(terminationType + ' is not a valid termination type')
 
-    algorithmEfficiency = (originalSolution[1] / bestSolution[1]) * 100
-    print("New Solution is: " + str(int(algorithmEfficiency) - 100) + "% faster than the original fastest route")
+    algorithmEfficiency = int((originalSolution[1] / bestSolution[1]) * 100) - 100
+    print("New Solution is: " + str(algorithmEfficiency) + "% faster than the original fastest route")
 
     Plotting.plotMap(cityCords)
     Plotting.plotRoute(representation, originalSolution, cityCords)
     Plotting.plotRoute(representation, bestSolution, cityCords)
+    addDataToCsv(originalSolution[0], bestSolution[0], algorithmEfficiency)
 
 
 def iterationTermination(originalPopulationWithFitness):
+    global reductionPercentage
+    reductionPercentage = 100
     populationWithFitness = originalPopulationWithFitness
     for i in tqdm(range(iterations)):
         populationWithFitness = createNewGeneration(populationWithFitness)
@@ -115,6 +121,8 @@ def reductionTermination(originalPopulationWithFitness):
 
 
 def convergenceTermination(originalPopulationWithFitness):
+    global reductionPercentage
+    reductionPercentage = 100
     populationWithFitness = originalPopulationWithFitness
     count = 0
     currentBest = math.inf
@@ -141,8 +149,8 @@ def createNewGeneration(populationWithFitness):
         print(selectionType + ' is not a valid selection method')
         sys.exit()
 
-    childPopulation = representations[representation].runCrossover(crossover, childPopulation)
-    childPopulation = representations[representation].runMutation(mutation, childPopulation, mutationProbability)
+    childPopulation = representations[representation].runCrossover(crossoverType, childPopulation)
+    childPopulation = representations[representation].runMutation(mutationType, childPopulation, mutationProbability)
 
     if representation == 'Bi':
         childPopulation = representations[representation].runRepair(childPopulation)
@@ -151,7 +159,7 @@ def createNewGeneration(populationWithFitness):
     newGeneration = Replacement.generationalReplacement(populationWithFitness,
                                                         childPopulationWithFitness,
                                                         generationalGapPercentage,
-                                                        generationalSizePercentage)
+                                                        reductionPercentage)
     return newGeneration
 
 
@@ -159,6 +167,19 @@ def findBestSolution(populationWithFitness):
     sortedPopulation = sorted(populationWithFitness, key=itemgetter(1))
     bestSolution = sortedPopulation[0]
     return bestSolution
+
+
+def addDataToCsv(originalSolution, finalSolution, algorithmEfficiency):
+    algorithm = selectionType + crossoverType + mutationType + terminationType
+    selection = [selectionType, selectionParameters[selectionType]]
+    termination = [terminationType, terminationParameters[terminationType]]
+
+    with open('tspData.csv', 'a', newline='') as csvfile:
+        wr = csv.writer(csvfile, delimiter=',')
+        wr.writerow(
+            [representation, numberOfCities, populationSize, childPopulationSizePercentage, generationalGapPercentage,
+             mutationProbability, algorithm, selection, termination, cityCords, originalSolution, finalSolution,
+             algorithmEfficiency])
 
 
 main()
