@@ -15,11 +15,11 @@ import PathOperators
 import Replacement
 import Plotting
 
-numberOfCities = 70
-populationSize = 25000
+numberOfCities = 50
+populationSize = 8000
 childPopulationSizePercentage = 30
 generationalGapPercentage = 20
-mutationProbability = 0.01
+mutationProbability = 0.001
 
 'Representation Key: Bi = Binary, Pa = Path'
 
@@ -39,7 +39,7 @@ Path - (MPPa = Maximal Preservative Path, PMPa = Partially Mapped Path, PBPa = P
 OBPa = Order Based Path, APPa = Alternating Position Path, CyPa = Cycle Based Path)
 '''
 
-crossoverType = 'MPPa'
+crossoverType = 'PMPa'
 
 '''
 Mutation Key: 
@@ -48,25 +48,120 @@ DiPa = Displacement Path, ExPa = Exchange Path, IsPa = Insertion Path, IvPa = In
 SIPa = Simple Inversion Path
 '''
 
-mutationType = 'DiPa'
+mutationType = 'IsPa'
 
 'Termination Key: It = Iteration, Re = Reduction, Co = Convergence'
 
 terminationType = 'Co'
-iterations = 100
+iterations = 50
 convergenceNumber = 50
-reductionPercentage = 99.99
+reductionPercentage = 99.5
 terminationParameters = {'It': iterations, 'Re': reductionPercentage, 'Co': convergenceNumber}
 
 fitnessFunction = {'Bi': CalculateFitness.calculateFitnessBinary, 'Pa': CalculateFitness.calculateFitnessPath}
-cityCords = []
+cityCords = MapGenerator.generateMap(numberOfCities)
 
 
-def main():
-    global cityCords
-    cityCords = MapGenerator.generateMap(numberOfCities)
+def optimiseAlgorithm():
+    global generationalGapPercentage
+    global populationSize
+    global mutationProbability
+    global childPopulationSizePercentage
+    childPopulationSizePercentage = 30
 
-    originalPopulation = GenerateDataSet.generatePopulation(representation, numberOfCities, populationSize)
+    optimalPopulation = GenerateDataSet.generatePopulation(representation, numberOfCities, populationSize)
+    childPopulationSizePercentage = optimiseChildPopulationSize(optimalPopulation)
+    generationalGapPercentage = optimiseGenerationalGap(optimalPopulation)
+    mutationProbability = optimiseMutationProbability(optimalPopulation)
+    populationSize = optimisePopulationSize()
+
+    finalPopulation = GenerateDataSet.generatePopulation(representation, numberOfCities, populationSize)
+    singleAlgorithm(finalPopulation)
+
+
+def optimisePopulationSize():
+    global populationSize
+    global mutationProbability
+    mutationProbability = 0
+    optimalPopulationSize = 0
+    currentAlgorithmEfficiency = 0
+    count = 0
+    populationSizes = [1000, 2000, 5000, 10000, 15000, 20000, 25000, 50000, 100000]
+
+    for size in populationSizes:
+        populationSize = size
+        population = GenerateDataSet.generatePopulation(representation, numberOfCities, populationSize)
+        algorithmEfficiency = singleAlgorithm(population)
+        if algorithmEfficiency > currentAlgorithmEfficiency:
+            currentAlgorithmEfficiency = algorithmEfficiency
+            optimalPopulationSize = size
+            count = 0
+        elif algorithmEfficiency == currentAlgorithmEfficiency:
+            return optimalPopulationSize
+        else:
+            count += 1
+            if count >= 3:
+                return optimalPopulationSize
+    return optimalPopulationSize
+
+
+def optimiseChildPopulationSize(population):
+    global childPopulationSizePercentage
+    global mutationProbability
+    mutationProbability = 0
+    optimalChildPopulationSize = 0
+    currentAlgorithmEfficiency = 0
+    count = 0
+
+    for size in range(1, 100, 5):
+        childPopulationSizePercentage = size
+        algorithmEfficiency = singleAlgorithm(population)
+        if algorithmEfficiency > currentAlgorithmEfficiency:
+            currentAlgorithmEfficiency = algorithmEfficiency
+            optimalChildPopulationSize = size
+            count = 0
+        elif algorithmEfficiency == currentAlgorithmEfficiency:
+            return optimalChildPopulationSize
+        else:
+            count += 1
+            if count >= 4:
+                return optimalChildPopulationSize
+    return optimalChildPopulationSize
+
+
+def optimiseGenerationalGap(population):
+    global generationalGapPercentage
+    global mutationProbability
+    mutationProbability = 0
+    optimalGenerationalGapPercentage = 0
+    currentAlgorithmEfficiency = 0
+
+    for generationalGap in range(5, 100, 5):
+        generationalGapPercentage = generationalGap
+        algorithmEfficiency = singleAlgorithm(population)
+        if algorithmEfficiency > currentAlgorithmEfficiency:
+            currentAlgorithmEfficiency = algorithmEfficiency
+            optimalGenerationalGapPercentage = generationalGapPercentage
+
+    return optimalGenerationalGapPercentage
+
+
+def optimiseMutationProbability(population):
+    global mutationProbability
+    optimalMutationProbability = 0
+    currentAlgorithmEfficiency = 0
+    mutations = [0, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1]
+
+    for probability in mutations:
+        mutationProbability = probability
+        algorithmEfficiency = singleAlgorithm(population)
+        if algorithmEfficiency > currentAlgorithmEfficiency:
+            currentAlgorithmEfficiency = algorithmEfficiency
+            optimalMutationProbability = mutationProbability
+    return optimalMutationProbability
+
+
+def singleAlgorithm(originalPopulation):
     originalPopulationWithFitness = fitnessFunction[representation](originalPopulation, cityCords)
     originalSolution = findBestSolution(originalPopulationWithFitness)
 
@@ -82,10 +177,12 @@ def main():
     algorithmEfficiency = int((originalSolution[1] / bestSolution[1]) * 100) - 100
     print("New Solution is: " + str(algorithmEfficiency) + "% faster than the original fastest route")
 
-    Plotting.plotMap(cityCords)
-    Plotting.plotRoute(representation, originalSolution, cityCords)
+    # Plotting.plotMap(cityCords)
+    # Plotting.plotRoute(representation, originalSolution, cityCords)
     Plotting.plotRoute(representation, bestSolution, cityCords)
     addDataToCsv(originalSolution[0], bestSolution[0], algorithmEfficiency)
+
+    return algorithmEfficiency
 
 
 def iterationTermination(originalPopulationWithFitness):
@@ -101,22 +198,22 @@ def iterationTermination(originalPopulationWithFitness):
 
 def reductionTermination(originalPopulationWithFitness):
     populationWithFitness = originalPopulationWithFitness
-    count = 1
-    totalDuration = 0
-    print('Minute 0: Population size = ' + str(len(populationWithFitness)))
+    count = len(populationWithFitness)
     while populationWithFitness:
-        start = time.time()
+        roundedPopulationCount = int(math.ceil(len(populationWithFitness) / 1000.0)) * 1000
         try:
             populationWithFitness = createNewGeneration(populationWithFitness)
-            stop = time.time()
-            duration = stop - start
-            totalDuration += (duration / 60)
-            if int(totalDuration) == count:
-                print('Minute ' + str(count) + ': Population size = ' + str(len(populationWithFitness)))
-                count += 1
+
+            if roundedPopulationCount == count:
+                print('Population size = ' + str(count))
+                count -= 1000
+            elif roundedPopulationCount < count:
+                count = roundedPopulationCount
+                print('Population size = ' + str(count))
             bestSolution = findBestSolution(populationWithFitness)
         except IndexError:
             break
+    print('Best Fitness = ' + str(bestSolution[1]))
     return bestSolution
 
 
@@ -170,16 +267,18 @@ def findBestSolution(populationWithFitness):
 
 
 def addDataToCsv(originalSolution, finalSolution, algorithmEfficiency):
-    algorithm = selectionType + crossoverType + mutationType + terminationType
+    algorithm = selectionType + crossoverType + mutationType + terminationType + str(numberOfCities)
     selection = [selectionType, selectionParameters[selectionType]]
     termination = [terminationType, terminationParameters[terminationType]]
+    checked = False
 
     with open('tspData.csv', 'a', newline='') as csvfile:
         wr = csv.writer(csvfile, delimiter=',')
         wr.writerow(
             [representation, numberOfCities, populationSize, childPopulationSizePercentage, generationalGapPercentage,
              mutationProbability, algorithm, selection, termination, cityCords, originalSolution, finalSolution,
-             algorithmEfficiency])
+             algorithmEfficiency, checked])
 
 
-main()
+Plotting.plotMap(cityCords)
+optimiseAlgorithm()
