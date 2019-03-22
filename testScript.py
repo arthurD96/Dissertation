@@ -14,6 +14,7 @@ import BinaryOperators
 import PathOperators
 import Replacement
 import Plotting
+import tspDatabase
 
 numberOfCities = 50
 populationSize = 8000
@@ -177,8 +178,8 @@ def singleAlgorithm(originalPopulation):
     algorithmEfficiency = int((originalSolution[1] / bestSolution[1]) * 100) - 100
     print("New Solution is: " + str(algorithmEfficiency) + "% faster than the original fastest route")
 
-    # Plotting.plotMap(cityCords)
-    # Plotting.plotRoute(representation, originalSolution, cityCords)
+    Plotting.plotMap(cityCords)
+    Plotting.plotRoute(representation, originalSolution, cityCords)
     Plotting.plotRoute(representation, bestSolution, cityCords)
     addDataToCsv(originalSolution[0], bestSolution[0], algorithmEfficiency)
 
@@ -272,13 +273,59 @@ def addDataToCsv(originalSolution, finalSolution, algorithmEfficiency):
     termination = [terminationType, terminationParameters[terminationType]]
     checked = False
 
-    with open('tspData.csv', 'a', newline='') as csvfile:
-        wr = csv.writer(csvfile, delimiter=',')
+    with open('tspData.csv', 'a', newline='') as csvFile:
+        wr = csv.writer(csvFile, delimiter=',')
         wr.writerow(
             [representation, numberOfCities, populationSize, childPopulationSizePercentage, generationalGapPercentage,
              mutationProbability, algorithm, selection, termination, cityCords, originalSolution, finalSolution,
              algorithmEfficiency, checked])
+    csvFile.close()
 
 
-Plotting.plotMap(cityCords)
-optimiseAlgorithm()
+def updateDBfromCsv():
+    csvData = readUncheckedCsvData()
+    conn, cursor = tspDatabase.connectToSQL()
+    for row in csvData:
+        markCsvRowAsChecked(row)
+        algorithm = row[6]
+        exists = tspDatabase.checkAlgorithmExists(algorithm, cursor)
+        if exists:
+            improved = tspDatabase.checkForAlgorithmImprovement(row, algorithm, cursor)
+            if improved:
+                tspDatabase.replaceResults(row, cursor)
+                print(algorithm + ' improved')
+            else:
+                continue
+        else:
+            tspDatabase.insertResults(row, cursor)
+            print(algorithm + ' added')
+    tspDatabase.disconnectFromSQL(conn)
+
+
+def readUncheckedCsvData():
+    csvData = []
+    with open('tspData.csv') as csvFile:
+        reader = csv.reader(csvFile)
+        for row in reader:
+            if row[13] == 'FALSE':
+                csvData.append(row)
+    csvFile.close()
+    return csvData
+
+
+def markCsvRowAsChecked(rowToCheck):
+    rowsToWrite = []
+    with open('tspData.csv') as readFile:
+        reader = csv.reader(readFile)
+        for row in reader:
+            if row == rowToCheck:
+                row[13] = 'TRUE'
+            rowsToWrite.append(row)
+
+    with open('tspData.csv', 'w', newline='') as writeFile:
+        writer = csv.writer(writeFile)
+        for row in rowsToWrite:
+            writer.writerow(row)
+
+
+updateDBfromCsv()

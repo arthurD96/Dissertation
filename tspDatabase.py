@@ -33,6 +33,16 @@ def checkAlgorithmExists(algorithm, cursor):
         return True
 
 
+def checkForAlgorithmImprovement(row, algorithm, cursor):
+    newAlgorithmEfficiency = int(row[12])
+    cursor.execute("SELECT algorithmEfficiency FROM tsp WHERE algorithm = ?", (algorithm,))
+    existingAlgorithmEfficiency = cursor.fetchone()[0]
+    if existingAlgorithmEfficiency < newAlgorithmEfficiency:
+        return True
+    else:
+        return False
+
+
 def insertResults(results, cursor):
     cursor.execute("INSERT INTO tsp VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (
         results[0], results[1], results[2], results[3], results[4], results[5], results[6], results[7],
@@ -40,13 +50,13 @@ def insertResults(results, cursor):
 
 
 def replaceResults(results, cursor):
-    values = results[2], results[3], results[4], results[5], results[7], results[8], results[9], results[10], \
-             results[11], results[12]
+    values = results[0], results[1], results[2], results[3], results[4], results[5], results[6], results[7], \
+             results[8], results[9], results[10], results[11], results[12]
     replaceQuery = """
-        REPLACE INTO tsp (
-        populationSize, childPopulationSize, generationGap, mutationRate, 
-        selection, termination, cityCoordinates, originalSolution, finalSolution, algorithmEfficiency)
-        VALUES"""
+            REPLACE INTO tsp (
+            representation, numberOfCities, populationSize, childPopulationSize, generationGap, mutationRate, algorithm,
+            selection, termination, cityCoordinates, originalSolution, finalSolution, algorithmEfficiency)
+            VALUES"""
     replaceQuery += str(values)
     cursor.execute(replaceQuery)
 
