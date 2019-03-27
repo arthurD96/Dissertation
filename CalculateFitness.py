@@ -1,4 +1,5 @@
 import math
+import MatrixOperators
 
 
 def calculateFitnessBinary(population, cityCords):
@@ -31,3 +32,14 @@ def calculateFitnessPath(population, cityCords):
         del solution[-1]
         populationWithFitness.append([solution, fitness])
     return populationWithFitness
+
+
+def calculateFitnessMatrix(population, cityCords):
+    pathPopulation = []
+    for tour in population:
+        tourPath = MatrixOperators.convertMatrixToTour(tour)
+        pathPopulation.append(tourPath)
+    populationWithFitness = calculateFitnessPath(pathPopulation, cityCords)
+    for i, tour in enumerate(populationWithFitness):
+        population[i] = [population[i], tour[1]]
+    return population

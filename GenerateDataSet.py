@@ -1,5 +1,6 @@
 import random
 import sys
+import MatrixOperators
 
 
 def generatePopulation(representation, tourSize, populationSize):
@@ -8,6 +9,9 @@ def generatePopulation(representation, tourSize, populationSize):
         return population
     elif representation == 'Pa':
         population = generatePopulationPath(tourSize, populationSize)
+        return population
+    elif representation == 'Ma':
+        population = generatePopulationMatrix(tourSize, populationSize)
         return population
     else:
         print(representation + ' is not a valid representation')
@@ -36,3 +40,13 @@ def generatePopulationPath(tourSize, populationSize):
         population.append(tour)
 
     return population
+
+
+def generatePopulationMatrix(tourSize, populationSize):
+    population = []
+    for i in range(populationSize):
+        tour = random.sample(range(1, tourSize + 1), tourSize)
+        solution = MatrixOperators.convertTourToMatrix(tour)
+        population.append(solution)
+    return population
+

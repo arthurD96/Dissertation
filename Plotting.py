@@ -1,8 +1,12 @@
 import matplotlib.pyplot as plt
 import sys
+import MatrixOperators
 
 
 def plotRoute(representation, solution, cityCords):
+    if representation == 'Ma':
+        solution[0] = MatrixOperators.convertMatrixToTour(solution[0])
+        representation = 'Pa'
     solution[0].append(solution[0][0])
     xySolution = []
     for i in range(0, len(solution[0])):

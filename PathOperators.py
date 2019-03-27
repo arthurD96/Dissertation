@@ -306,16 +306,20 @@ def runCrossover(crossover, population):
     childPopulation = []
     numberOfCities = len(population[0])
     crossoverFunction = crossovers.get(crossover)
-    for i in range(0, len(population), 2):
-        try:
-            parentOne = population[i]
-            parentTwo = population[i + 1]
-        except IndexError:
-            parentOne = population[i]
-            parentTwo = population[0]
+    if crossoverFunction:
+        for i in range(0, len(population), 2):
+            try:
+                parentOne = population[i]
+                parentTwo = population[i + 1]
+            except IndexError:
+                parentOne = population[i]
+                parentTwo = population[0]
 
-        children = crossoverFunction(numberOfCities, parentOne, parentTwo)
-        childPopulation.extend(children)
+            children = crossoverFunction(numberOfCities, parentOne, parentTwo)
+            childPopulation.extend(children)
+    else:
+        print(str(crossover) + ' is not a valid Path crossover')
+        sys.exit()
     return childPopulation
 
 

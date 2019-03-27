@@ -1,7 +1,11 @@
 import random
+import sys
 
 
 def runMutation(mutation, population, mutationProbability):
+    if mutation != 'ClBi':
+        print(mutation + ' is not a valid binary mutation')
+        sys.exit()
     mutatedPopulation = []
 
     for i in range(0, len(population)):
@@ -28,6 +32,9 @@ def runMutation(mutation, population, mutationProbability):
 
 
 def runCrossover(crossover, population):
+    if crossover != 'ClBi':
+        print(crossover + ' is not a valid binary crossover')
+        sys.exit()
     childPopulation = []
     numberOfBits = len(population[0][0])
 

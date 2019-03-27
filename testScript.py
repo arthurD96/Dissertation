@@ -12,20 +12,21 @@ import CalculateFitness
 import Selection
 import BinaryOperators
 import PathOperators
+import MatrixOperators
 import Replacement
 import Plotting
 import tspDatabase
 
-numberOfCities = 50
+numberOfCities = 10
 populationSize = 8000
-childPopulationSizePercentage = 30
-generationalGapPercentage = 20
+childPopulationSizePercentage = 100
+generationalGapPercentage = 50
 mutationProbability = 0.001
 
-'Representation Key: Bi = Binary, Pa = Path'
+'Representation Key: Bi = Binary, Pa = Path, Ma = Matrix'
 
-representation = 'Pa'
-representations = {'Bi': BinaryOperators, 'Pa': PathOperators}
+representation = 'Ma'
+representations = {'Bi': BinaryOperators, 'Pa': PathOperators, 'Ma': MatrixOperators}
 
 'Selection Key: To = Tournament, Ro = Roulette'
 
@@ -38,9 +39,10 @@ Crossover Key:
 Binary - (ClBi = Classical Binary)
 Path - (MPPa = Maximal Preservative Path, PMPa = Partially Mapped Path, PBPa = Position Based Path, OrPa = Order Path,
 OBPa = Order Based Path, APPa = Alternating Position Path, CyPa = Cycle Based Path)
+Matrix - (UnMa = Union Matrix, IsMa = Intersection Matrix)
 '''
 
-crossoverType = 'PMPa'
+crossoverType = 'IsMa'
 
 '''
 Mutation Key: 
@@ -49,17 +51,18 @@ DiPa = Displacement Path, ExPa = Exchange Path, IsPa = Insertion Path, IvPa = In
 SIPa = Simple Inversion Path
 '''
 
-mutationType = 'IsPa'
+mutationType = 'IvPa'
 
 'Termination Key: It = Iteration, Re = Reduction, Co = Convergence'
 
-terminationType = 'Co'
+terminationType = 'It'
 iterations = 100
 convergenceNumber = 50
 reductionPercentage = 99.6
 terminationParameters = {'It': iterations, 'Re': reductionPercentage, 'Co': convergenceNumber}
 
-fitnessFunction = {'Bi': CalculateFitness.calculateFitnessBinary, 'Pa': CalculateFitness.calculateFitnessPath}
+fitnessFunction = {'Bi': CalculateFitness.calculateFitnessBinary, 'Pa': CalculateFitness.calculateFitnessPath,
+                   'Ma': CalculateFitness.calculateFitnessMatrix}
 cityCords = MapGenerator.generateMap(numberOfCities)
 
 
@@ -112,7 +115,7 @@ def optimiseChildPopulationSize(population):
     currentAlgorithmEfficiency = 0
     count = 0
 
-    for size in range(5, 105, 10):
+    for size in range(5, 105, 15):
         childPopulationSizePercentage = size
         algorithmEfficiency = singleAlgorithm(population)
         if algorithmEfficiency > currentAlgorithmEfficiency:
@@ -134,7 +137,7 @@ def optimiseGenerationalGap(population):
     currentAlgorithmEfficiency = 0
     count = 0
 
-    for generationalGap in range(5, 105, 10):
+    for generationalGap in range(5, 105, 15):
         generationalGapPercentage = generationalGap
         algorithmEfficiency = singleAlgorithm(population)
         if algorithmEfficiency > currentAlgorithmEfficiency:
@@ -182,9 +185,10 @@ def singleAlgorithm(originalPopulation):
     algorithmEfficiency = int((originalSolution[1] / bestSolution[1]) * 100) - 100
     print("New Solution is: " + str(algorithmEfficiency) + "% faster than the original fastest route")
 
-    # Plotting.plotMap(cityCords)
-    # Plotting.plotRoute(representation, originalSolution, cityCords)
-    # Plotting.plotRoute(representation, bestSolution, cityCords)
+    Plotting.plotMap(cityCords)
+    Plotting.plotRoute(representation, originalSolution, cityCords)
+    if originalSolution != bestSolution:
+        Plotting.plotRoute(representation, bestSolution, cityCords)
     addDataToCsv(originalSolution[0], bestSolution[0], algorithmEfficiency)
     updateDBfromCsv()
 
@@ -251,7 +255,6 @@ def createNewGeneration(populationWithFitness):
     else:
         print(selectionType + ' is not a valid selection method')
         sys.exit()
-
     childPopulation = representations[representation].runCrossover(crossoverType, childPopulation)
     childPopulation = representations[representation].runMutation(mutationType, childPopulation, mutationProbability)
 
@@ -362,4 +365,5 @@ def generateDataPath():
                         continue
 
 
-generateDataPath()
+population = GenerateDataSet.generatePopulationMatrix(10, 1000)
+singleAlgorithm(population)

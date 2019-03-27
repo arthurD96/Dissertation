@@ -49,7 +49,6 @@ def rouletteSelection(population, winningPopulationPercentage):
 
     competitorNumber = 0
     solutionNumber = 0
-
     while competitorNumber != len(selectedCompetitors):
 
         if selectedCompetitors[competitorNumber] < populationWithCumulativeFitness[solutionNumber][1]:
