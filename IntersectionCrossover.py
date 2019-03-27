@@ -25,7 +25,7 @@ def intersectionCrossover(population):
             if city not in tourChild:
                 index = tourChild.index(None)
                 tourChild[index] = city
-        matrixChild = GenerateData.convertTourToMatrix(tourChild, numberOfCities)
+        matrixChild = GenerateData.convertTourToMatrix(tourChild)
         childPopulation.append(matrixChild)
     return childPopulation
 
