@@ -54,9 +54,9 @@ mutationType = 'IsPa'
 'Termination Key: It = Iteration, Re = Reduction, Co = Convergence'
 
 terminationType = 'Co'
-iterations = 50
+iterations = 100
 convergenceNumber = 50
-reductionPercentage = 99.5
+reductionPercentage = 99.6
 terminationParameters = {'It': iterations, 'Re': reductionPercentage, 'Co': convergenceNumber}
 
 fitnessFunction = {'Bi': CalculateFitness.calculateFitnessBinary, 'Pa': CalculateFitness.calculateFitnessPath}
@@ -69,25 +69,25 @@ def optimiseAlgorithm():
     global mutationProbability
     global childPopulationSizePercentage
     childPopulationSizePercentage = 30
+    mutationProbability = 0.001
+    populationSize = 8000
+    generationalGapPercentage = 20
 
     optimalPopulation = GenerateDataSet.generatePopulation(representation, numberOfCities, populationSize)
+    mutationProbability = optimiseMutationProbability(optimalPopulation)
     childPopulationSizePercentage = optimiseChildPopulationSize(optimalPopulation)
     generationalGapPercentage = optimiseGenerationalGap(optimalPopulation)
-    mutationProbability = optimiseMutationProbability(optimalPopulation)
     populationSize = optimisePopulationSize()
-
     finalPopulation = GenerateDataSet.generatePopulation(representation, numberOfCities, populationSize)
     singleAlgorithm(finalPopulation)
 
 
 def optimisePopulationSize():
     global populationSize
-    global mutationProbability
-    mutationProbability = 0
     optimalPopulationSize = 0
     currentAlgorithmEfficiency = 0
     count = 0
-    populationSizes = [1000, 2000, 5000, 10000, 15000, 20000, 25000, 50000, 100000]
+    populationSizes = [5000, 10000, 18000, 25000, 50000, 100000]
 
     for size in populationSizes:
         populationSize = size
@@ -108,13 +108,11 @@ def optimisePopulationSize():
 
 def optimiseChildPopulationSize(population):
     global childPopulationSizePercentage
-    global mutationProbability
-    mutationProbability = 0
     optimalChildPopulationSize = 0
     currentAlgorithmEfficiency = 0
     count = 0
 
-    for size in range(1, 100, 5):
+    for size in range(5, 105, 10):
         childPopulationSizePercentage = size
         algorithmEfficiency = singleAlgorithm(population)
         if algorithmEfficiency > currentAlgorithmEfficiency:
@@ -132,17 +130,23 @@ def optimiseChildPopulationSize(population):
 
 def optimiseGenerationalGap(population):
     global generationalGapPercentage
-    global mutationProbability
-    mutationProbability = 0
     optimalGenerationalGapPercentage = 0
     currentAlgorithmEfficiency = 0
+    count = 0
 
-    for generationalGap in range(5, 100, 5):
+    for generationalGap in range(5, 105, 10):
         generationalGapPercentage = generationalGap
         algorithmEfficiency = singleAlgorithm(population)
         if algorithmEfficiency > currentAlgorithmEfficiency:
             currentAlgorithmEfficiency = algorithmEfficiency
             optimalGenerationalGapPercentage = generationalGapPercentage
+            count = 0
+        elif algorithmEfficiency == currentAlgorithmEfficiency:
+            return optimalGenerationalGapPercentage
+        else:
+            count += 1
+            if count >= 4:
+                return optimiseGenerationalGap()
 
     return optimalGenerationalGapPercentage
 
@@ -178,10 +182,11 @@ def singleAlgorithm(originalPopulation):
     algorithmEfficiency = int((originalSolution[1] / bestSolution[1]) * 100) - 100
     print("New Solution is: " + str(algorithmEfficiency) + "% faster than the original fastest route")
 
-    Plotting.plotMap(cityCords)
-    Plotting.plotRoute(representation, originalSolution, cityCords)
-    Plotting.plotRoute(representation, bestSolution, cityCords)
+    # Plotting.plotMap(cityCords)
+    # Plotting.plotRoute(representation, originalSolution, cityCords)
+    # Plotting.plotRoute(representation, bestSolution, cityCords)
     addDataToCsv(originalSolution[0], bestSolution[0], algorithmEfficiency)
+    updateDBfromCsv()
 
     return algorithmEfficiency
 
@@ -307,7 +312,7 @@ def readUncheckedCsvData():
     with open('tspData.csv') as csvFile:
         reader = csv.reader(csvFile)
         for row in reader:
-            if row[13] == 'FALSE':
+            if row[13] == 'False':
                 csvData.append(row)
     csvFile.close()
     return csvData
@@ -328,4 +333,33 @@ def markCsvRowAsChecked(rowToCheck):
             writer.writerow(row)
 
 
-updateDBfromCsv()
+def generateDataPath():
+    global mutationType
+    global crossoverType
+    global numberOfCities
+    global terminationType
+    global cityCords
+    crossovers = ['PMPa', 'PBPa', 'OrPa', 'OBPa', 'APPa', 'CyPa', 'MPPa']
+    mutations = ['ExPa', 'IsPa', 'IvPa', 'ScPa', 'SIPa', 'DiPa']
+    cities = [30, 50, 70, 100, 60, 80, 90, 40, 10, 20]
+    terminations = ['Co', 'Re', 'It']
+
+    for terminationType in terminations:
+        for numberOfCities in cities:
+            cityCords = MapGenerator.generateMap(numberOfCities)
+            for mutationType in mutations:
+                for crossoverType in crossovers:
+
+                    try:
+                        algorithm = selectionType + crossoverType + mutationType + terminationType + str(numberOfCities)
+                        conn, cursor = tspDatabase.connectToSQL()
+                        exists = tspDatabase.checkAlgorithmExists(algorithm, cursor)
+                        if exists:
+                            continue
+                        else:
+                            optimiseAlgorithm()
+                    except:
+                        continue
+
+
+generateDataPath()
