@@ -252,7 +252,7 @@ def insertionMutation(solutionToMutate):
         insertionPoint = random.randint(0, len(solutionToMutate) - 1)
     removedCity = solutionToMutate[alleleToMove]
     del solutionToMutate[alleleToMove]
-    solutionToMutate[insertionPoint:insertionPoint] = removedCity
+    solutionToMutate.insert(insertionPoint,removedCity)
     return solutionToMutate
 
 

@@ -19,13 +19,13 @@ import tspDatabase
 
 numberOfCities = 10
 populationSize = 8000
-childPopulationSizePercentage = 100
-generationalGapPercentage = 50
+childPopulationSizePercentage = 30
+generationalGapPercentage = 20
 mutationProbability = 0.001
 
 'Representation Key: Bi = Binary, Pa = Path, Ma = Matrix'
 
-representation = 'Ma'
+representation = 'Pa'
 representations = {'Bi': BinaryOperators, 'Pa': PathOperators, 'Ma': MatrixOperators}
 
 'Selection Key: To = Tournament, Ro = Roulette'
@@ -111,16 +111,16 @@ def optimisePopulationSize():
 
 def optimiseChildPopulationSize(population):
     global childPopulationSizePercentage
+    populationSizes = [5, 10, 15, 20, 50, 80]
     optimalChildPopulationSize = 0
     currentAlgorithmEfficiency = 0
     count = 0
 
-    for size in range(5, 105, 15):
-        childPopulationSizePercentage = size
+    for childPopulationSizePercentage in populationSizes:
         algorithmEfficiency = singleAlgorithm(population)
         if algorithmEfficiency > currentAlgorithmEfficiency:
             currentAlgorithmEfficiency = algorithmEfficiency
-            optimalChildPopulationSize = size
+            optimalChildPopulationSize = childPopulationSizePercentage
             count = 0
         elif algorithmEfficiency == currentAlgorithmEfficiency:
             return optimalChildPopulationSize
@@ -133,12 +133,12 @@ def optimiseChildPopulationSize(population):
 
 def optimiseGenerationalGap(population):
     global generationalGapPercentage
+    generationalGaps = [5, 10, 15, 20, 50, 80]
     optimalGenerationalGapPercentage = 0
     currentAlgorithmEfficiency = 0
     count = 0
 
-    for generationalGap in range(5, 105, 15):
-        generationalGapPercentage = generationalGap
+    for generationalGapPercentage in generationalGaps:
         algorithmEfficiency = singleAlgorithm(population)
         if algorithmEfficiency > currentAlgorithmEfficiency:
             currentAlgorithmEfficiency = algorithmEfficiency
@@ -149,7 +149,7 @@ def optimiseGenerationalGap(population):
         else:
             count += 1
             if count >= 4:
-                return optimiseGenerationalGap()
+                return optimalGenerationalGapPercentage
 
     return optimalGenerationalGapPercentage
 
@@ -159,7 +159,6 @@ def optimiseMutationProbability(population):
     optimalMutationProbability = 0
     currentAlgorithmEfficiency = 0
     mutations = [0, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1]
-
     for probability in mutations:
         mutationProbability = probability
         algorithmEfficiency = singleAlgorithm(population)
@@ -185,10 +184,10 @@ def singleAlgorithm(originalPopulation):
     algorithmEfficiency = int((originalSolution[1] / bestSolution[1]) * 100) - 100
     print("New Solution is: " + str(algorithmEfficiency) + "% faster than the original fastest route")
 
-    Plotting.plotMap(cityCords)
-    Plotting.plotRoute(representation, originalSolution, cityCords)
-    if originalSolution != bestSolution:
-        Plotting.plotRoute(representation, bestSolution, cityCords)
+    # Plotting.plotMap(cityCords)
+    # Plotting.plotRoute(representation, originalSolution, cityCords)
+    # if originalSolution != bestSolution:
+    #     Plotting.plotRoute(representation, bestSolution, cityCords)
     addDataToCsv(originalSolution[0], bestSolution[0], algorithmEfficiency)
     updateDBfromCsv()
 
@@ -342,28 +341,105 @@ def generateDataPath():
     global numberOfCities
     global terminationType
     global cityCords
+    global representation
+    global selectionType
+    representation = 'Pa'
     crossovers = ['PMPa', 'PBPa', 'OrPa', 'OBPa', 'APPa', 'CyPa', 'MPPa']
-    mutations = ['ExPa', 'IsPa', 'IvPa', 'ScPa', 'SIPa', 'DiPa']
-    cities = [30, 50, 70, 100, 60, 80, 90, 40, 10, 20]
+    mutations = ['ExPa', 'IvPa', 'ScPa', 'SIPa', 'DiPa', 'IsPa']
+    cities = [30, 50, 70, 100]
     terminations = ['Co', 'Re', 'It']
+    selections = ['Ro', 'To']
 
     for terminationType in terminations:
-        for numberOfCities in cities:
-            cityCords = MapGenerator.generateMap(numberOfCities)
-            for mutationType in mutations:
-                for crossoverType in crossovers:
+        for selectionType in selections:
+            for numberOfCities in cities:
+                cityCords = MapGenerator.generateMap(numberOfCities)
+                for mutationType in mutations:
+                    for crossoverType in crossovers:
 
-                    try:
-                        algorithm = selectionType + crossoverType + mutationType + terminationType + str(numberOfCities)
+                        try:
+                            algorithm = selectionType + crossoverType + mutationType + terminationType + str(
+                                numberOfCities)
+                            conn, cursor = tspDatabase.connectToSQL()
+                            exists = tspDatabase.checkAlgorithmExists(algorithm, cursor)
+                            if exists:
+                                continue
+                            else:
+                                optimiseAlgorithm()
+                        except:
+                            print('error')
+                            continue
+
+
+def generateDataBinary():
+    global mutationType
+    global crossoverType
+    global numberOfCities
+    global terminationType
+    global cityCords
+    global representation
+    global selectionType
+    representation = 'Bi'
+    crossovers = ['ClBi']
+    mutations = ['ClBi']
+    cities = [30, 50, 70, 100]
+    terminations = ['Co', 'Re', 'It']
+    selections = ['Ro', 'To']
+
+    for terminationType in terminations:
+        for selectionType in selections:
+            for numberOfCities in cities:
+                cityCords = MapGenerator.generateMap(numberOfCities)
+                for mutationType in mutations:
+                    for crossoverType in crossovers:
+
+                        try:
+                            algorithm = selectionType + crossoverType + mutationType + terminationType + str(
+                                numberOfCities)
+                            conn, cursor = tspDatabase.connectToSQL()
+                            exists = tspDatabase.checkAlgorithmExists(algorithm, cursor)
+                            if exists:
+                                continue
+                            else:
+                                optimiseAlgorithm()
+                        except:
+                            print('error')
+                            continue
+
+
+def generateDataMatrix():
+    global mutationType
+    global crossoverType
+    global numberOfCities
+    global terminationType
+    global cityCords
+    global representation
+    global selectionType
+    representation = 'Ma'
+    crossovers = ['UnMa', 'IsMa']
+    mutations = ['ExPa', 'IvPa', 'ScPa', 'SIPa', 'DiPa', 'IsPa']
+    cities = [30, 50, 70, 100]
+    terminations = ['Co', 'Re', 'It']
+    selections = ['Ro', 'To']
+
+    for terminationType in terminations:
+        for selectionType in selections:
+            for numberOfCities in cities:
+                cityCords = MapGenerator.generateMap(numberOfCities)
+                for mutationType in mutations:
+                    for crossoverType in crossovers:
+
+                        # try:
+                        algorithm = selectionType + crossoverType + mutationType + terminationType + str(
+                            numberOfCities)
                         conn, cursor = tspDatabase.connectToSQL()
                         exists = tspDatabase.checkAlgorithmExists(algorithm, cursor)
                         if exists:
                             continue
                         else:
                             optimiseAlgorithm()
-                    except:
-                        continue
+                    # except:
+                    #     continue
 
 
-population = GenerateDataSet.generatePopulationMatrix(10, 1000)
-singleAlgorithm(population)
+generateDataBinary()
