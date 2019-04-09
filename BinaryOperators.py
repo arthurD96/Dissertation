@@ -3,7 +3,7 @@ import sys
 
 
 def runMutation(mutation, population, mutationProbability):
-    if mutation != 'ClBi':
+    if mutation != 'Classical':
         print(mutation + ' is not a valid binary mutation')
         sys.exit()
     mutatedPopulation = []
@@ -32,7 +32,7 @@ def runMutation(mutation, population, mutationProbability):
 
 
 def runCrossover(crossover, population):
-    if crossover != 'ClBi':
+    if crossover != 'Classical':
         print(crossover + ' is not a valid binary crossover')
         sys.exit()
     childPopulation = []

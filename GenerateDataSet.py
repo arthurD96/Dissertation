@@ -4,13 +4,13 @@ import MatrixOperators
 
 
 def generatePopulation(representation, tourSize, populationSize):
-    if representation == 'Bi':
+    if representation == 'Binary':
         population = generatePopulationBinary(tourSize, populationSize)
         return population
-    elif representation == 'Pa':
+    elif representation == 'Path':
         population = generatePopulationPath(tourSize, populationSize)
         return population
-    elif representation == 'Ma':
+    elif representation == 'Matrix':
         population = generatePopulationMatrix(tourSize, populationSize)
         return population
     else:

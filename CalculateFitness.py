@@ -41,5 +41,5 @@ def calculateFitnessMatrix(population, cityCords):
         pathPopulation.append(tourPath)
     populationWithFitness = calculateFitnessPath(pathPopulation, cityCords)
     for i, tour in enumerate(populationWithFitness):
-        population[i] = [population[i], tour[1]]
-    return population
+        populationWithFitness[i] = [population[i], tour[1]]
+    return populationWithFitness

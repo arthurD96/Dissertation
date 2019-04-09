@@ -17,7 +17,7 @@ def generationalReplacement(population, children, generationalGapPercentage, ret
     sortedPopulation.extend(sortedChildren)
     sortedPopulation = sorted(sortedPopulation, key=itemgetter(1))
 
-    returnNumber = int((returnPercentage / 100) * len(population))
+    returnNumber = int((float(returnPercentage) / 100) * len(population))
     random.shuffle(sortedPopulation)
     newGeneration = sortedPopulation[:returnNumber]
     return newGeneration

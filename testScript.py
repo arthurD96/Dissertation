@@ -14,56 +14,56 @@ import BinaryOperators
 import PathOperators
 import MatrixOperators
 import Replacement
-import Plotting
 import tspDatabase
 
-numberOfCities = 10
+numberOfCities = 30
 populationSize = 8000
 childPopulationSizePercentage = 30
 generationalGapPercentage = 20
 mutationProbability = 0.001
 
-'Representation Key: Bi = Binary, Pa = Path, Ma = Matrix'
+representation = 'Path'
+representations = {'Binary': BinaryOperators, 'Path': PathOperators, 'Matrix': MatrixOperators}
 
-representation = 'Pa'
-representations = {'Bi': BinaryOperators, 'Pa': PathOperators, 'Ma': MatrixOperators}
-
-'Selection Key: To = Tournament, Ro = Roulette'
-
-selectionType = 'Ro'
-tournamentSize = 10
-selectionParameters = {'Ro': None, 'To': tournamentSize}
+selectionType = ''
+tournamentSize = 1
+selectionParameters = {'Roulette': None, 'Tournament': tournamentSize}
 
 '''
 Crossover Key: 
-Binary - (ClBi = Classical Binary)
-Path - (MPPa = Maximal Preservative Path, PMPa = Partially Mapped Path, PBPa = Position Based Path, OrPa = Order Path,
-OBPa = Order Based Path, APPa = Alternating Position Path, CyPa = Cycle Based Path)
-Matrix - (UnMa = Union Matrix, IsMa = Intersection Matrix)
+Binary - (Classical Binary)
+Path - (Maximal Preservative, Partially Mapped, Position Based, Order, Order Based, Alternating Position, Cycle)
+Matrix - (Union , Intersection)
 '''
 
-crossoverType = 'IsMa'
+crossoverType = ''
 
 '''
 Mutation Key: 
-ClBi = Classical Binary 
-DiPa = Displacement Path, ExPa = Exchange Path, IsPa = Insertion Path, IvPa = Inversion Path, ScPa = Scramble Path, 
-SIPa = Simple Inversion Path
+Binary = (Classical) 
+Path and Matrix = (Displacement, Exchange, Insertion, Inversion, Scramble, Simple Inversion)
 '''
 
-mutationType = 'IvPa'
+mutationType = ''
 
-'Termination Key: It = Iteration, Re = Reduction, Co = Convergence'
+terminationType = ''
 
-terminationType = 'It'
 iterations = 100
-convergenceNumber = 50
+convergenceNumber = 10
 reductionPercentage = 99.6
-terminationParameters = {'It': iterations, 'Re': reductionPercentage, 'Co': convergenceNumber}
+terminationParameters = {'Iteration': iterations, 'Reduction': reductionPercentage, 'Convergence': convergenceNumber}
 
-fitnessFunction = {'Bi': CalculateFitness.calculateFitnessBinary, 'Pa': CalculateFitness.calculateFitnessPath,
-                   'Ma': CalculateFitness.calculateFitnessMatrix}
+fitnessFunction = {'Binary': CalculateFitness.calculateFitnessBinary, 'Path': CalculateFitness.calculateFitnessPath,
+                   'Matrix': CalculateFitness.calculateFitnessMatrix}
+
 cityCords = MapGenerator.generateMap(numberOfCities)
+
+algorithmDict = {'Path': 'Pa', 'Binary': 'Bi', 'Matrix': 'Ma', 'Tournament': 'To', 'Roulette': 'Ro',
+                 'Maximal Preservative': 'MPPa', 'Partially Mapped': 'PMPa', 'Position Based': 'PBPa',
+                 'Order': 'OrPa', 'Order Based': 'OBPa', 'Alternating Position': 'APPa', 'Cycle': 'CyPa',
+                 'Classical': 'ClBi', 'Intersection': 'IsMa', 'Union': 'UnMa', 'Displacement': 'DiPa',
+                 'Exchange': 'ExPa', 'Insertion': 'IsPa', 'Inversion': 'IvPa', 'Scramble': 'ScPa',
+                 'Simple Inversion': 'SIPa', 'Convergence': 'Co', 'Reduction': 'Re', 'Iteration': 'It'}
 
 
 def optimiseAlgorithm():
@@ -72,7 +72,7 @@ def optimiseAlgorithm():
     global mutationProbability
     global childPopulationSizePercentage
     childPopulationSizePercentage = 30
-    mutationProbability = 0.001
+    mutationProbability = 0.0001
     populationSize = 8000
     generationalGapPercentage = 20
 
@@ -90,7 +90,7 @@ def optimisePopulationSize():
     optimalPopulationSize = 0
     currentAlgorithmEfficiency = 0
     count = 0
-    populationSizes = [5000, 10000, 18000, 25000, 50000, 100000]
+    populationSizes = [5000, 10000, 18000, 25000, 50000]
 
     for size in populationSizes:
         populationSize = size
@@ -111,7 +111,7 @@ def optimisePopulationSize():
 
 def optimiseChildPopulationSize(population):
     global childPopulationSizePercentage
-    populationSizes = [5, 10, 15, 20, 50, 80]
+    populationSizes = [5, 10, 15, 20, 50]
     optimalChildPopulationSize = 0
     currentAlgorithmEfficiency = 0
     count = 0
@@ -133,7 +133,7 @@ def optimiseChildPopulationSize(population):
 
 def optimiseGenerationalGap(population):
     global generationalGapPercentage
-    generationalGaps = [5, 10, 15, 20, 50, 80]
+    generationalGaps = [1, 5, 10, 15, 20]
     optimalGenerationalGapPercentage = 0
     currentAlgorithmEfficiency = 0
     count = 0
@@ -172,11 +172,11 @@ def singleAlgorithm(originalPopulation):
     originalPopulationWithFitness = fitnessFunction[representation](originalPopulation, cityCords)
     originalSolution = findBestSolution(originalPopulationWithFitness)
 
-    if terminationType == 'It':
+    if terminationType == 'Iteration':
         bestSolution = iterationTermination(originalPopulationWithFitness)
-    elif terminationType == 'Re':
+    elif terminationType == 'Reduction':
         bestSolution = reductionTermination(originalPopulationWithFitness)
-    elif terminationType == 'Co':
+    elif terminationType == 'Convergence':
         bestSolution = convergenceTermination(originalPopulationWithFitness)
     else:
         print(terminationType + ' is not a valid termination type')
@@ -184,10 +184,6 @@ def singleAlgorithm(originalPopulation):
     algorithmEfficiency = int((originalSolution[1] / bestSolution[1]) * 100) - 100
     print("New Solution is: " + str(algorithmEfficiency) + "% faster than the original fastest route")
 
-    # Plotting.plotMap(cityCords)
-    # Plotting.plotRoute(representation, originalSolution, cityCords)
-    # if originalSolution != bestSolution:
-    #     Plotting.plotRoute(representation, bestSolution, cityCords)
     addDataToCsv(originalSolution[0], bestSolution[0], algorithmEfficiency)
     updateDBfromCsv()
 
@@ -245,10 +241,10 @@ def convergenceTermination(originalPopulationWithFitness):
 
 
 def createNewGeneration(populationWithFitness):
-    if selectionType == 'Ro':
+    if selectionType == 'Roulette':
         childPopulation = Selection.rouletteSelection(populationWithFitness,
                                                       childPopulationSizePercentage)
-    elif selectionType == 'To':
+    elif selectionType == 'Tournament':
         childPopulation = Selection.tournamentSelection(populationWithFitness, tournamentSize,
                                                         childPopulationSizePercentage)
     else:
@@ -257,7 +253,7 @@ def createNewGeneration(populationWithFitness):
     childPopulation = representations[representation].runCrossover(crossoverType, childPopulation)
     childPopulation = representations[representation].runMutation(mutationType, childPopulation, mutationProbability)
 
-    if representation == 'Bi':
+    if representation == 'Binary':
         childPopulation = representations[representation].runRepair(childPopulation)
 
     childPopulationWithFitness = fitnessFunction[representation](childPopulation, cityCords)
@@ -275,16 +271,17 @@ def findBestSolution(populationWithFitness):
 
 
 def addDataToCsv(originalSolution, finalSolution, algorithmEfficiency):
-    algorithm = selectionType + crossoverType + mutationType + terminationType + str(numberOfCities)
-    selection = [selectionType, selectionParameters[selectionType]]
-    termination = [terminationType, terminationParameters[terminationType]]
     checked = False
-
+    algorithmKey = algorithmDict[selectionType] + algorithmDict[crossoverType] + algorithmDict[mutationType] + \
+                   algorithmDict[terminationType] + str(numberOfCities)
+    selectionKey = [algorithmDict[selectionType], selectionParameters[selectionType]]
+    terminationKey = [algorithmDict[terminationType], terminationParameters[terminationType]]
     with open('tspData.csv', 'a', newline='') as csvFile:
         wr = csv.writer(csvFile, delimiter=',')
         wr.writerow(
-            [representation, numberOfCities, populationSize, childPopulationSizePercentage, generationalGapPercentage,
-             mutationProbability, algorithm, selection, termination, cityCords, originalSolution, finalSolution,
+            [algorithmDict[representation], numberOfCities, populationSize, childPopulationSizePercentage, generationalGapPercentage,
+             mutationProbability, algorithmKey, selectionKey, terminationKey, cityCords, originalSolution,
+             finalSolution,
              algorithmEfficiency, checked])
     csvFile.close()
 
@@ -312,10 +309,14 @@ def updateDBfromCsv():
 def readUncheckedCsvData():
     csvData = []
     with open('tspData.csv') as csvFile:
-        reader = csv.reader(csvFile)
-        for row in reader:
-            if row[13] == 'False':
-                csvData.append(row)
+        try:
+            reader = csv.reader(csvFile)
+            for row in reader:
+                if row[13] == 'False':
+                    csvData.append(row)
+        except IndexError:
+            print(row)
+            sys.exit()
     csvFile.close()
     return csvData
 
@@ -343,12 +344,13 @@ def generateDataPath():
     global cityCords
     global representation
     global selectionType
-    representation = 'Pa'
-    crossovers = ['PMPa', 'PBPa', 'OrPa', 'OBPa', 'APPa', 'CyPa', 'MPPa']
-    mutations = ['ExPa', 'IvPa', 'ScPa', 'SIPa', 'DiPa', 'IsPa']
+    representation = 'Path'
+    crossovers = ['Maximal Preservative', 'Partially Mapped', 'Position Based', 'Order', 'Order Based',
+                  'Alternating Position', 'Cycle']
+    mutations = ['Displacement', 'Exchange', 'Insertion', 'Inversion', 'Scramble', 'Simple Inversion']
     cities = [30, 50, 70, 100]
-    terminations = ['Co', 'Re', 'It']
-    selections = ['Ro', 'To']
+    terminations = ['Convergence', 'Reduction', 'Iteration']
+    selections = ['Tournament', 'Roulette']
 
     for terminationType in terminations:
         for selectionType in selections:
@@ -358,16 +360,19 @@ def generateDataPath():
                     for crossoverType in crossovers:
 
                         try:
-                            algorithm = selectionType + crossoverType + mutationType + terminationType + str(
-                                numberOfCities)
+                            algorithmKey = algorithmDict[selectionType] + algorithmDict[crossoverType] + algorithmDict[
+                                mutationType] + \
+                                           algorithmDict[terminationType] + str(numberOfCities)
                             conn, cursor = tspDatabase.connectToSQL()
-                            exists = tspDatabase.checkAlgorithmExists(algorithm, cursor)
+                            exists = tspDatabase.checkAlgorithmExists(algorithmKey, cursor)
                             if exists:
+                                print(algorithmKey + ' Exists already')
                                 continue
                             else:
+                                print('Optimising ' + algorithmKey)
                                 optimiseAlgorithm()
-                        except:
-                            print('error')
+                        except Exception as e:
+                            print(e)
                             continue
 
 
@@ -379,12 +384,12 @@ def generateDataBinary():
     global cityCords
     global representation
     global selectionType
-    representation = 'Bi'
-    crossovers = ['ClBi']
-    mutations = ['ClBi']
+    representation = 'Binary'
+    crossovers = ['Classical']
+    mutations = ['Classical']
     cities = [30, 50, 70, 100]
-    terminations = ['Co', 'Re', 'It']
-    selections = ['Ro', 'To']
+    terminations = ['Convergence', 'Reduction', 'Iteration']
+    selections = ['Tournament', 'Roulette']
 
     for terminationType in terminations:
         for selectionType in selections:
@@ -394,16 +399,19 @@ def generateDataBinary():
                     for crossoverType in crossovers:
 
                         try:
-                            algorithm = selectionType + crossoverType + mutationType + terminationType + str(
-                                numberOfCities)
+                            algorithmKey = algorithmDict[selectionType] + algorithmDict[crossoverType] + algorithmDict[
+                                mutationType] + \
+                                           algorithmDict[terminationType] + str(numberOfCities)
                             conn, cursor = tspDatabase.connectToSQL()
-                            exists = tspDatabase.checkAlgorithmExists(algorithm, cursor)
+                            exists = tspDatabase.checkAlgorithmExists(algorithmKey, cursor)
                             if exists:
+                                print(algorithmKey + ' Exists already')
                                 continue
                             else:
+                                print('Optimising ' + algorithmKey)
                                 optimiseAlgorithm()
-                        except:
-                            print('error')
+                        except Exception as e:
+                            print(e)
                             continue
 
 
@@ -415,12 +423,12 @@ def generateDataMatrix():
     global cityCords
     global representation
     global selectionType
-    representation = 'Ma'
-    crossovers = ['UnMa', 'IsMa']
-    mutations = ['ExPa', 'IvPa', 'ScPa', 'SIPa', 'DiPa', 'IsPa']
+    representation = 'Matrix'
+    crossovers = ['Union', 'Intersection']
+    mutations = ['Displacement', 'Exchange', 'Insertion', 'Inversion', 'Scramble', 'Simple Inversion']
     cities = [30, 50, 70, 100]
-    terminations = ['Co', 'Re', 'It']
-    selections = ['Ro', 'To']
+    terminations = ['Convergence', 'Reduction', 'Iteration']
+    selections = ['Tournament', 'Roulette']
 
     for terminationType in terminations:
         for selectionType in selections:
@@ -429,17 +437,27 @@ def generateDataMatrix():
                 for mutationType in mutations:
                     for crossoverType in crossovers:
 
-                        # try:
-                        algorithm = selectionType + crossoverType + mutationType + terminationType + str(
-                            numberOfCities)
-                        conn, cursor = tspDatabase.connectToSQL()
-                        exists = tspDatabase.checkAlgorithmExists(algorithm, cursor)
-                        if exists:
+                        try:
+                            algorithmKey = algorithmDict[selectionType] + algorithmDict[crossoverType] + algorithmDict[
+                                mutationType] + \
+                                           algorithmDict[terminationType] + str(numberOfCities)
+                            conn, cursor = tspDatabase.connectToSQL()
+                            exists = tspDatabase.checkAlgorithmExists(algorithmKey, cursor)
+                            if exists:
+                                print(algorithmKey + ' Exists already')
+                                continue
+                            else:
+                                print('Optimising ' + algorithmKey)
+                                optimiseAlgorithm()
+                        except Exception as e:
+                            print(e)
                             continue
-                        else:
-                            optimiseAlgorithm()
-                    # except:
-                    #     continue
 
 
-generateDataBinary()
+def generateData():
+    generateDataBinary()
+    generateDataPath()
+    generateDataMatrix()
+
+
+generateData()

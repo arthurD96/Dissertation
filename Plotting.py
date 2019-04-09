@@ -4,15 +4,15 @@ import MatrixOperators
 
 
 def plotRoute(representation, solution, cityCords):
-    if representation == 'Ma':
+    if representation == 'Matrix':
         solution[0] = MatrixOperators.convertMatrixToTour(solution[0])
-        representation = 'Pa'
+        representation = 'Path'
     solution[0].append(solution[0][0])
     xySolution = []
     for i in range(0, len(solution[0])):
-        if representation == 'Bi':
+        if representation == 'Binary':
             cityInt = int(solution[0][i], 2)
-        elif representation == 'Pa':
+        elif representation == 'Path':
             cityInt = int(solution[0][i])
         else:
             print(representation + ': is not a valid representation')

@@ -252,7 +252,7 @@ def insertionMutation(solutionToMutate):
         insertionPoint = random.randint(0, len(solutionToMutate) - 1)
     removedCity = solutionToMutate[alleleToMove]
     del solutionToMutate[alleleToMove]
-    solutionToMutate.insert(insertionPoint,removedCity)
+    solutionToMutate.insert(insertionPoint, removedCity)
     return solutionToMutate
 
 
@@ -291,14 +291,17 @@ def simpleInversionMutation(solutionToMutate):
 
 
 crossovers = {
-    'MPPa': maximalPreservativeCrossover, 'PMPa': partiallyMappedCrossover, 'PBPa': positionBasedCrossover,
-    'OrPa': orderCrossover, 'OBPa': orderBasedCrossover, 'APPa': alternatingPositionCrossover,
-    'CyPa': cycleCrossover
+    'Maximal Preservative': maximalPreservativeCrossover, 'Partially Mapped': partiallyMappedCrossover,
+    'Position Based': positionBasedCrossover,
+    'Order': orderCrossover, 'Order Based': orderBasedCrossover, 'Alternating Position': alternatingPositionCrossover,
+    'Cycle': cycleCrossover
 }
 
+
 mutations = {
-    'DiPa': displacementMutation, 'ExPa': exchangeMutation, 'IsPa': insertionMutation, 'IvPa': inversionMutation,
-    'ScPa': scrambleMutation, 'SIPa': simpleInversionMutation
+    'Displacement': displacementMutation, 'Exchange': exchangeMutation, 'Insertion': insertionMutation,
+    'Inversion': inversionMutation,
+    'Scramble': scrambleMutation, 'Simple Inversion': simpleInversionMutation
 }
 
 
@@ -316,10 +319,13 @@ def runCrossover(crossover, population):
                 parentTwo = population[0]
 
             children = crossoverFunction(numberOfCities, parentOne, parentTwo)
+            children[0] = list(filter(None, children[0]))
+            children[1] = list(filter(None, children[1]))
             childPopulation.extend(children)
     else:
         print(str(crossover) + ' is not a valid Path crossover')
         sys.exit()
+
     return childPopulation
 
 

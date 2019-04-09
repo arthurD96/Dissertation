@@ -70,7 +70,7 @@ def unionCrossover(numberOfCities, parentOne, parentTwo):
     return child
 
 
-crossovers = {'IsMa': intersectionCrossover, 'UnMa': unionCrossover}
+crossovers = {'Intersection': intersectionCrossover, 'Union': unionCrossover}
 
 
 def runCrossover(crossover, population):

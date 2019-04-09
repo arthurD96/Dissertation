@@ -1,4 +1,7 @@
 import random
+import math
+import numpy as np
+
 
 def tournamentSelection(population, selectionPercentage, winningPopulationPercentage):
     winningPopulation = []
@@ -8,8 +11,9 @@ def tournamentSelection(population, selectionPercentage, winningPopulationPercen
 
     percentageFloat = float(selectionPercentage) / 100
     tournamentSize = percentageFloat * float(len(population))
+    populationArray = np.array(population)
     for i in range(0, int(winningPopulationSize)):
-        selectedCompetitors = random.sample(population, int(tournamentSize))
+        selectedCompetitors = populationArray[np.random.choice(len(population), math.ceil(tournamentSize))]
         bestCandidate = min(selectedCompetitors, key=lambda x: x[1])
         winningPopulation.append(bestCandidate[0])
     return winningPopulation
