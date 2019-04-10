@@ -2,6 +2,7 @@ import math
 import sys
 import csv
 import time
+import os
 import threading
 from concurrent import futures
 from operator import itemgetter
@@ -380,12 +381,17 @@ class AlgorithmSelector(tk.Frame):
             app.frames[ProgressViewer].mapPlot.scatter(unzippedXy[0], unzippedXy[1], marker="+")
             app.frames[ProgressViewer].canvas.draw()
 
+            algorithmKey = algorithmDict[selectionType] + algorithmDict[crossoverType] + algorithmDict[mutationType] + \
+                           algorithmDict[terminationType] + str(numberOfCities)
+            app.frames[ProgressViewer].algorithmLabel.config(text="Algorithm Key: \t" + algorithmKey)
+
             controller.showFrame(ProgressViewer)
 
 
 class ProgressViewer(tk.Frame):
     def __init__(self, parent, controller):
         self.queue = None
+        self.generationCount = 1
         tk.Frame.__init__(self, parent)
         self.mapFigure = Figure(figsize=(5, 5), dpi=100)
         self.mapPlot = self.mapFigure.add_subplot(111)
@@ -393,23 +399,33 @@ class ProgressViewer(tk.Frame):
         mainLabel = ttk.Label(self, text="Travelling Salesman Problem: Running Algorithm", font=fontLarge)
         mainLabel.grid(column=1, columnspan=3, row=0, sticky=tk.N + tk.W)
 
-        algorithmLabel = ttk.Label(self, text="Algorithm Key: ")
-        algorithmLabel.grid(column=1, row=2, sticky=tk.N + tk.W)
+        self.statusLabel = ttk.Label(self, text="Status: \tPending")
+        self.statusLabel.grid(column=1, row=2, sticky=tk.N + tk.W)
 
-        originalSolutionLabel = ttk.Label(self, text="Original Solution Fitness: ")
-        originalSolutionLabel.grid(column=1, row=3, sticky=tk.N + tk.W)
+
+        self.algorithmLabel = ttk.Label(self, text="Algorithm Key: ")
+        self.algorithmLabel.grid(column=1, row=3, sticky=tk.N + tk.W)
+
+        self.generationCountLabel = ttk.Label(self, text="Generation Count: \t" + str(self.generationCount))
+        self.generationCountLabel.grid(column=1, row=4, sticky=tk.N + tk.W)
+
+        self.originalSolutionLabel = ttk.Label(self, text="Original Fitness: ")
+        self.originalSolutionLabel.grid(column=1, row=5, sticky=tk.N + tk.W)
 
         self.bestSolutionLabel = ttk.Label(self, text="Best Fitness: ")
-        self.bestSolutionLabel.grid(column=1, row=4, sticky=tk.N + tk.W)
+        self.bestSolutionLabel.grid(column=1, row=6, sticky=tk.N + tk.W)
 
-        algorithmImprovementLabel = ttk.Label(self, text="Algorithm Improvement: ")
-        algorithmImprovementLabel.grid(column=1, row=5, sticky=tk.N + tk.W)
+        self.algorithmImprovementLabel = ttk.Label(self, text="Algorithm Improvement: ")
+        self.algorithmImprovementLabel.grid(column=1, row=7, sticky=tk.N + tk.W)
+
+
 
         self.startButton = ttk.Button(self, text="Start", command=self.runAlgorithm)
-        self.startButton.grid(column=1, row=6, sticky=tk.S + tk.W)
+        self.startButton.grid(column=1, row=8, sticky=tk.S + tk.W)
 
-        finishButton = ttk.Button(self, text="Exit", command=controller.quit)
-        finishButton.grid(column=2, row=20, sticky=tk.S + tk.W)
+
+
+
 
         self.canvas = FigureCanvasTkAgg(self.mapFigure, self)
         self.canvas.get_tk_widget().grid(column=5, row=1, sticky=tk.N + tk.W)
@@ -433,21 +449,45 @@ class ProgressViewer(tk.Frame):
         try:
             msg = self.queue.get(0)
             if msg == "Original Solution":
+                self.originalSolutionLabel.config(text="Original Fitness: \t" + str(originalSolution[1]))
+                self.statusLabel.config(text = "Status: \tRunning")
                 xyRoute = plotRoute(originalSolution)
                 self.mapPlot.clear()
-                self.mapPlot.plot(xyRoute[0], xyRoute[1], marker = "+")
+                self.mapPlot.plot(xyRoute[0], xyRoute[1], marker="+")
                 self.canvas.draw()
                 self.master.after(100, self.process_queue)
             elif msg == "New Generation":
+                algorithmEfficiency = int((originalSolution[1] / bestSolution[1]) * 100) - 100
+                self.generationCount += 1
+                self.generationCountLabel.config(text="Generation Count: \t" + str(self.generationCount))
+                self.bestSolutionLabel.config(text="Best Fitness: \t" + str(bestSolution[1]))
+                self.algorithmImprovementLabel.config(text="Fitness Improvement (%): \t" + str(algorithmEfficiency))
                 xyRoute = plotRoute(bestSolution)
                 self.mapPlot.clear()
-                self.mapPlot.plot(xyRoute[0], xyRoute[1], marker = "+")
+                self.mapPlot.plot(xyRoute[0], xyRoute[1], marker="+")
+                self.canvas.draw()
+                self.master.after(100, self.process_queue)
+            elif msg == "Finished":
+                algorithmEfficiency = int((originalSolution[1] / bestSolution[1]) * 100) - 100
+                self.generationCount += 1
+                self.generationCountLabel.config(text="Generation Count: \t" + str(self.generationCount))
+                self.bestSolutionLabel.config(text="Best Fitness: \t" + str(bestSolution[1]))
+                self.algorithmImprovementLabel.config(text="Fitness Improvement (%): \t" + str(algorithmEfficiency))
+                self.statusLabel.config(text="Status: \tFinished")
+                self.restartButton = ttk.Button(self, text="Restart", command=self.restart)
+                self.restartButton.grid(column=2, row=8, sticky=tk.S + tk.W)
+                xyRoute = plotRoute(bestSolution)
+                self.mapPlot.clear()
+                self.mapPlot.plot(xyRoute[0], xyRoute[1], marker="+")
                 self.canvas.draw()
                 self.master.after(100, self.process_queue)
 
         except queue.Empty:
             self.master.after(100, self.process_queue)
 
+    def restart(self):
+        python = sys.executable
+        os.execl(python, python, *sys.argv)
 
 class ThreadedTask(threading.Thread):
     def __init__(self, queue):
@@ -470,10 +510,8 @@ class ThreadedTask(threading.Thread):
         elif terminationType == 'Convergence':
             self.convergenceTermination()
 
-        print(bestSolution)
-        print(originalSolution)
         algorithmEfficiency = int((originalSolution[1] / bestSolution[1]) * 100) - 100
-
+        self.queue.put("Finished")
         addDataToCsv(originalSolution[0], bestSolution[0], algorithmEfficiency)
         updateDBfromCsv()
 
@@ -498,10 +536,10 @@ class ThreadedTask(threading.Thread):
                 populationWithFitness = self.createNewGeneration(populationWithFitness)
 
                 if roundedPopulationCount == count:
-                    print('Population size = ' + str(count))
                     count -= 1000
                 elif roundedPopulationCount < count:
                     count = roundedPopulationCount
+                self.queue.put("New Generation")
                 bestSolution = self.findBestSolution(populationWithFitness)
             except IndexError:
                 break
@@ -514,7 +552,6 @@ class ThreadedTask(threading.Thread):
         count = 0
         currentBest = math.inf
         while count < int(terminationParameter):
-            print(count)
             populationWithFitness = self.createNewGeneration(populationWithFitness)
             bestSolution = self.findBestSolution(populationWithFitness)
 
@@ -593,6 +630,7 @@ def addDataToCsv(originalSolution, finalSolution, algorithmEfficiency):
 def updateDBfromCsv():
     csvData = readUncheckedCsvData()
     conn, cursor = tspDatabase.connectToSQL()
+    tspDatabase.createTable(cursor)
     for row in csvData:
         markCsvRowAsChecked(row)
         algorithm = row[6]
@@ -608,6 +646,7 @@ def updateDBfromCsv():
             tspDatabase.insertResults(row, cursor)
             print(algorithm + ' added')
     tspDatabase.disconnectFromSQL(conn)
+
 
 
 def readUncheckedCsvData():
@@ -638,6 +677,7 @@ def markCsvRowAsChecked(rowToCheck):
         writer = csv.writer(writeFile)
         for row in rowsToWrite:
             writer.writerow(row)
+
 
 
 app = tspInterface()

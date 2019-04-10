@@ -8,7 +8,7 @@ def connectToSQL():
 
 
 def createTable(cursor):
-    cursor.execute("""CREATE TABLE tsp (
+    cursor.execute("""CREATE TABLE if not exists tsp (
                     representation text,
                     numberOfCities integer,
                     populationSize integer,
