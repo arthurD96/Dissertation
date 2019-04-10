@@ -49,7 +49,7 @@ mutationType = ''
 terminationType = ''
 
 iterations = 100
-convergenceNumber = 10
+convergenceNumber = 40
 reductionPercentage = 99.6
 terminationParameters = {'Iteration': iterations, 'Reduction': reductionPercentage, 'Convergence': convergenceNumber}
 
@@ -350,7 +350,7 @@ def generateDataPath():
     mutations = ['Displacement', 'Exchange', 'Insertion', 'Inversion', 'Scramble', 'Simple Inversion']
     cities = [30, 50, 70, 100]
     terminations = ['Convergence', 'Reduction', 'Iteration']
-    selections = ['Tournament', 'Roulette']
+    selections = ['Roulette', 'Tournament']
 
     for terminationType in terminations:
         for selectionType in selections:
